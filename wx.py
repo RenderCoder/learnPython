@@ -40,6 +40,8 @@ def analyseWords(s):
 
 # 网易云音乐
 from NetEaseMusicApi import api, save_song, save_album
+# import sina_shorturl
+from shortUrl import dwz
 
 def searchLyric(songName):
     result = api.search.lyric(songName)
@@ -53,21 +55,26 @@ def searchLyric(songName):
 def searchSong(songName):
     result = api.search.songs(songName)
     replyMessage = False
-    if result:
-        if len(result) > 0:
-            id = result[0]['id']
-            songs = api.song.detail(id)
-            if len(songs) > 0:
-                song = songs[0]
-                url = 'https://bijiabo.github.io/musicPlayer/?'
-                url += 'mp3=' + urllib.parse.quote(song['mp3Url'])
-                if song['artists']:
-                    if len(song['artists']) > 0:
-                        if song['artists'][0]['name']:
-                            url += '&singer=' + urllib.parse.quote(song['artists'][0]['name'])
-                url += '&name=' + urllib.parse.quote(song['name'])
-
-                replyMessage = url
+    if result and len(result) > 0:
+        id = result[0]['id']
+        songs = api.song.detail(id)
+        if len(songs) > 0:
+            song = songs[0]
+            singer = ''
+            name = song['name']
+            url = 'https://bijiabo.github.io/musicPlayer/?'
+            url += 'mp3=' + urllib.parse.quote(song['mp3Url'])
+            if song['artists']:
+                if len(song['artists']) > 0:
+                    if song['artists'][0]['name']:
+                        singer = song['artists'][0]['name']
+                        url += '&singer=' + urllib.parse.quote(singer)
+            url += '&name=' + urllib.parse.quote(name)
+            shortUrl = dwz(urllib.parse.quote(url))
+            replyMessage = name
+            if len(singer) > 0:
+                replyMessage += ' - %s' % singer
+            replyMessage += '\n%s' % shortUrl
 
     return replyMessage
 
@@ -134,9 +141,9 @@ def text_reply(msg):
 
         if toAnalyse:
             itchat.send(u'%s' % analyseWords(msg['Content'].replace('-分析', '')), msg['FromUserName'])
-        elif isDog or isYu:
-            replyMessage = '%s' % '汪'*random.randint(1, 20)
-            itchat.send(u'%s' % replyMessage, msg['FromUserName'])
+        # elif isDog or isYu:
+        #     replyMessage = '%s' % '汪'*random.randint(1, 20)
+        #     itchat.send(u'%s' % replyMessage, msg['FromUserName'])
         elif toOpenLight:
             Light = True
             replyMessage = '灯打开啦'
