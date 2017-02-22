@@ -7,6 +7,7 @@ from itchat.content import *
 import re
 import random
 import tuling123
+import urllib.parse
 
 # 模拟 灯 和 风扇
 global Light, Fan
@@ -42,7 +43,7 @@ from NetEaseMusicApi import api, save_song, save_album
 
 def searchLyric(songName):
     result = api.search.lyric(songName)
-    replyMessage = '没找到这个歌词 =_='
+    replyMessage = False
     if result:
         if len(result) > 0:
             if result['lyrics']['txt']:
@@ -51,14 +52,23 @@ def searchLyric(songName):
 
 def searchSong(songName):
     result = api.search.songs(songName)
-    replyMessage = '没找到这首歌的播放链接...'
+    replyMessage = False
     if result:
         if len(result) > 0:
             id = result[0]['id']
             songs = api.song.detail(id)
             if len(songs) > 0:
                 song = songs[0]
-                replyMessage = song['mp3Url']
+                url = 'https://bijiabo.github.io/musicPlayer/?'
+                url += 'mp3=' + urllib.parse.quote(song['mp3Url'])
+                if song['artists']:
+                    if len(song['artists']) > 0:
+                        if song['artists'][0]['name']:
+                            url += '&singer=' + urllib.parse.quote(song['artists'][0]['name'])
+                url += '&name=' + urllib.parse.quote(song['name'])
+
+                replyMessage = url
+
     return replyMessage
 
 
@@ -68,9 +78,10 @@ def text_reply(msg):
 
     itchat.send(u'%s' % tuling123.ask(msg['Content']), msg['FromUserName'])
     # songUrl = searchSong(msg['Content'])
-    # itchat.send(u'%s' % songUrl, msg['FromUserName'])
-    # if songUrl != '没找到这首歌的播放链接...':
-    #     itchat.send(u'%s' % '自己复制上面的链接去听吧，微信有点限制你懂的...毕竟是竞争对手...', msg['FromUserName'])
+    # if songUrl:
+    #     itchat.send(u'%s' % songUrl, msg['FromUserName'])
+    # else:
+    #     itchat.send(u'%s' % '木有找到歌曲...', msg['FromUserName'])
 
 @itchat.msg_register([PICTURE, RECORDING, ATTACHMENT, VIDEO])
 def download_files(msg):
@@ -119,6 +130,7 @@ def text_reply(msg):
         aboutSpeedy1 = searchCommand('闪电')
 
         toAnalyse = searchCommand('-分析')
+        toSearchSong = searchCommand('我要听')
 
         if toAnalyse:
             itchat.send(u'%s' % analyseWords(msg['Content'].replace('-分析', '')), msg['FromUserName'])
@@ -162,6 +174,14 @@ def text_reply(msg):
         elif aboutSpeedy0 or aboutSpeedy1:
             replyMessage = '胡大大家的小霸王，爱吃牛肉，擅长狗叫，喜欢睡觉的时候压住别人的腿...'
             itchat.send(u'%s' % replyMessage, msg['FromUserName'])
+        elif toSearchSong:
+            songName = msg['Content'].replace('我要听', '')
+            songUrl = searchSong(songName)
+            if songUrl:
+                itchat.send(u'%s\n%s' % (songName, songUrl), msg['FromUserName'])
+            else:
+                itchat.send(u'%s' % '木有找到歌曲...', msg['FromUserName'])
+            # itchat.send(u'%s' % replyMessage, msg['FromUserName'])
         else:
             itchat.send(u'%s' % tuling123.ask(msg['Content']), msg['FromUserName'])
             # itchat.send(u'@%s\u2005I received: %s' % (msg['ActualNickName'], msg['Content']), msg['FromUserName'])
