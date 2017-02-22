@@ -8,15 +8,69 @@ import re
 import random
 import tuling123
 
+# 模拟 灯 和 风扇
 global Light, Fan
 Light = False
 Fan = False
 
+# 语义分析
+from bosonnlp import BosonNLP
+nlp = BosonNLP('AmNHBHGR.13240.5qhNVXvho3VJ')
+
+def analyseWords(s):
+    result = nlp.ner(s, sensitivity=1)[0]
+    print(result)
+    words = result['word']
+    entities = result['entity']
+
+    replayMessage = ''
+
+    for entity in entities:
+        # print(''.join(words[entity[0]:entity[1]]), entity[2])
+        replayMessage += entity[2] + ' '
+        replayMessage += ''.join(words[entity[0]:entity[1]])
+        replayMessage += '\n'
+
+    for word in words:
+        replayMessage += word + '\n'
+
+    return replayMessage
+
+
+# 网易云音乐
+from NetEaseMusicApi import api, save_song, save_album
+
+def searchLyric(songName):
+    result = api.search.lyric(songName)
+    replyMessage = '没找到这个歌词 =_='
+    if result:
+        if len(result) > 0:
+            if result['lyrics']['txt']:
+                replyMessage = result['lyrics']['txt']
+    return replyMessage
+
+def searchSong(songName):
+    result = api.search.songs(songName)
+    replyMessage = '没找到这首歌的播放链接...'
+    if result:
+        if len(result) > 0:
+            id = result[0]['id']
+            songs = api.song.detail(id)
+            if len(songs) > 0:
+                song = songs[0]
+                replyMessage = song['mp3Url']
+    return replyMessage
+
 
 @itchat.msg_register([TEXT, MAP, CARD, NOTE, SHARING])
 def text_reply(msg):
-    # itchat.send('%s: %s' % (msg['Type'], msg['Text']), msg['FromUserName'])
+    # itchat.send(u'%s' % analyseWords(msg['Content']), msg['FromUserName'])
+
     itchat.send(u'%s' % tuling123.ask(msg['Content']), msg['FromUserName'])
+    # songUrl = searchSong(msg['Content'])
+    # itchat.send(u'%s' % songUrl, msg['FromUserName'])
+    # if songUrl != '没找到这首歌的播放链接...':
+    #     itchat.send(u'%s' % '自己复制上面的链接去听吧，微信有点限制你懂的...毕竟是竞争对手...', msg['FromUserName'])
 
 @itchat.msg_register([PICTURE, RECORDING, ATTACHMENT, VIDEO])
 def download_files(msg):
@@ -64,7 +118,11 @@ def text_reply(msg):
         aboutSpeedy0 = searchCommand('⚡')
         aboutSpeedy1 = searchCommand('闪电')
 
-        if isDog or isYu:
+        toAnalyse = searchCommand('-分析')
+
+        if toAnalyse:
+            itchat.send(u'%s' % analyseWords(msg['Content'].replace('-分析', '')), msg['FromUserName'])
+        elif isDog or isYu:
             replyMessage = '%s' % '汪'*random.randint(1, 20)
             itchat.send(u'%s' % replyMessage, msg['FromUserName'])
         elif toOpenLight:
