@@ -185,7 +185,7 @@ def text_reply(msg):
             songName = msg['Content'].replace('我要听', '')
             songUrl = searchSong(songName)
             if songUrl:
-                itchat.send(u'%s\n%s' % (songName, songUrl), msg['FromUserName'])
+                itchat.send(songUrl, msg['FromUserName'])
             else:
                 itchat.send(u'%s' % '木有找到歌曲...', msg['FromUserName'])
             # itchat.send(u'%s' % replyMessage, msg['FromUserName'])
@@ -194,5 +194,5 @@ def text_reply(msg):
             # itchat.send(u'@%s\u2005I received: %s' % (msg['ActualNickName'], msg['Content']), msg['FromUserName'])
 
 # itchat.auto_login(True)
-itchat.auto_login(hotReload=True)
+itchat.auto_login(hotReload=True, enableCmdQR=2)
 itchat.run()
